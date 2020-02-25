@@ -58,3 +58,12 @@ class cleaners:
         df['gross_square_feet'] = df['gross_square_feet'].replace(0,round(scipy.stats.trim_mean(df['gross_square_feet'], 0.08), 0))
         
         return df
+    
+    def airbnb_cleaner(self, df):
+        self.df = df
+        
+        del df["last_review"]
+        del df["reviews_per_month"]
+        df = df.dropna()
+        
+        return df
