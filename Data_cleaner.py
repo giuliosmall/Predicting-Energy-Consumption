@@ -15,7 +15,7 @@ class cleaners:
         del df["Unnamed: 0"]
         
         # Change columns' names in order to have lower case and no spasce between words
-        df = df.rename(columns=str.lower)
+        df = df.rename(columns = str.lower)
         df.columns = df.columns.str.replace(' ', '_')
 
         # Check for and eventually remove rows that are duplicates
@@ -33,14 +33,16 @@ class cleaners:
         # "block", "lot", "zip_code", "residential_units", "commercial_units", "total_units", "tax_class_at_time_of_sale"
 
         # Replace a precise value in this column, which we are sure is not in the column, then drop those rows
-        df["sale_price"] = df["sale_price"].replace(' -  ', "%%%%")
+        # >>>> df["sale_price"] = df["sale_price"].replace(' -  ', "%%%%")
 
         ######## ARE THOSE LINES TO BE DROPPED OR TO ADD THE MEAN
-        df.drop(df[df.sale_price == "%%%%"].index, inplace = True)
+        df.drop(df[df.sale_price == ' -  '].index, inplace = True)
 
         # Convert all the remaining values to float
-        df['sale_price']= pd.to_numeric(df['sale_price'], errors = 'raise')
+        df['sale_price'] = pd.to_numeric(df['sale_price'], errors = 'raise')
 
+        # Convert years into integers
+        
         # Replace given string with nan
         df['tax_class_at_present'] = df['tax_class_at_present'].replace(" " , np.nan)
         df['building_class_at_present'] = df['building_class_at_present'].replace(" " , np.nan)
@@ -67,3 +69,31 @@ class cleaners:
         df = df.dropna()
         
         return df
+    
+    def crash_cleaner(self, df):
+        
+        self.df = df
+        df = df.rename(columns = str.lower)
+        df.columns = df.columns.str.replace(' ', '_')
+        
+        del df["off_street_name"] # 77% of values are NaN
+        # removed to reduce necessary computation, since it is a useless information
+        del df["on_street_name"]
+        del df["cross_street_name"]
+        del df["collision_id"]
+        del df["zip_code"]
+        
+        
+        df["accident_date"] = df["accident_date"].str.replace('T00:00:00.000', '')
+        # To slice only accidents occured in 2017
+        df.drop(df[df.accident_date >= "2018-01-01"].index, inplace = True)
+        df.drop(df[df.accident_date <= "2016-12-31"].index, inplace = True)
+        
+        # To slice only accidents whose coordinates belong sto NYC 
+        df.drop(df[df.longitude < -74.28].index, inplace = True)
+        df.drop(df[df.longitude > -73.65].index, inplace = True)
+        df.drop(df[df.latitude < 40.48].index, inplace = True)
+        df.drop(df[df.latitude > 40.93].index, inplace = True)
+        df = df.reset_index() 
+        
+        return df       
