@@ -58,7 +58,8 @@ class cleaners:
         df['gross_square_feet'] = df['gross_square_feet'].replace('0' , 0)
         df['gross_square_feet']= pd.to_numeric(df['gross_square_feet'], errors = 'raise')
         df['gross_square_feet'] = df['gross_square_feet'].replace(0,round(scipy.stats.trim_mean(df['gross_square_feet'], 0.08), 0))
-        
+        # reset index 
+        df = df.reset_index(drop=True) 
         return df
     
     def airbnb_cleaner(self, df):
@@ -94,6 +95,13 @@ class cleaners:
         df.drop(df[df.longitude > -73.65].index, inplace = True)
         df.drop(df[df.latitude < 40.48].index, inplace = True)
         df.drop(df[df.latitude > 40.93].index, inplace = True)
-        df = df.reset_index() 
+        # reset index 
+        df = df.reset_index(drop=True)
+        # replacing NaNs with None
+        df = df.where(pd.notnull(df),None)
+        df['latitude'] = pd.to_numeric(df['latitude'], errors = 'raise')
+        df['longitude'] = pd.to_numeric(df['longitude'], errors = 'raise')
+        df['number_of_persons_injured'] = pd.to_numeric(df['number_of_persons_injured'], errors = 'raise')
+        df['number_of_persons_killed'] = pd.to_numeric(df['number_of_persons_killed'], errors = 'raise')
         
         return df       
