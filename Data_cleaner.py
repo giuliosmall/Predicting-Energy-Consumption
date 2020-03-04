@@ -2,6 +2,7 @@ import statistics
 import pandas as pd
 import numpy as np
 import scipy
+from math import cos, asin, sqrt
 
 
 class cleaners:
@@ -59,7 +60,7 @@ class cleaners:
         df['gross_square_feet']= pd.to_numeric(df['gross_square_feet'], errors = 'raise')
         df['gross_square_feet'] = df['gross_square_feet'].replace(0,round(scipy.stats.trim_mean(df['gross_square_feet'], 0.08), 0))
         # reset index 
-        df = df.reset_index(drop=True) 
+        df = df.reset_index(drop = True) 
         return df
     
     def airbnb_cleaner(self, df):
@@ -67,8 +68,20 @@ class cleaners:
         
         del df["last_review"]
         del df["reviews_per_month"]
+        df = df.rename(columns = {"neighbourhood_group": "borough", "neighbourhood": "neighborhood"}, errors = "raise")
         df = df.dropna()
         
+        shape_before = df.shape
+        
+        # To check that every entry belongs to NYC
+        df.drop(df[df.longitude < -74.28].index, inplace = True)
+        df.drop(df[df.longitude > -73.65].index, inplace = True)
+        df.drop(df[df.latitude < 40.48].index, inplace = True)
+        df.drop(df[df.latitude > 40.93].index, inplace = True)
+        
+        shape_after = df.shape
+        
+        print(shape_after == df.shape)
         return df
     
     def crash_cleaner(self, df):
@@ -104,4 +117,24 @@ class cleaners:
         df['number_of_persons_injured'] = pd.to_numeric(df['number_of_persons_injured'], errors = 'raise')
         df['number_of_persons_killed'] = pd.to_numeric(df['number_of_persons_killed'], errors = 'raise')
         
-        return df       
+        return df
+    # --------------------------------------------------
+    # Functions used to fill values in the column "borough" starting from coordinates
+    # Haversine formula
+    def distance(self, lat1, lon1, lat2, lon2):
+        self.lat1 = lat1
+        self.lat2 = lat2
+        self.lon1 = lon1
+        self.lon2 = lon2
+        p = 0.017453292519943295 # math.PI / 180
+        a = 0.5 - cos((lat2-lat1)*p)/2 + cos(lat1*p)*cos(lat2*p) * (1-cos((lon2-lon1)*p)) / 2
+        return 12742 * asin(sqrt(a)) #2 * R; R = 6371 km
+
+    # get the closest point 
+    def closest(self, df, coords):
+        self.df = df
+        self.coords = coords
+        return min(df, key=lambda p: self.distance(coords[0], coords[1], p[1], p[2]))
+    
+    
+    # --------------------------------------------------
