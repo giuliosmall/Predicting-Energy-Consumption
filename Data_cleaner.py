@@ -11,7 +11,7 @@ class cleaners:
         
         self.df = df
         
-        # Drop EASE-MENT column since it is empty, and UNNAMED: 0
+        # Drop EASE-MENT and UNNAMED: 0 columns since they are empty
         del df["EASE-MENT"]
         del df["Unnamed: 0"]
         
@@ -59,12 +59,14 @@ class cleaners:
         df['gross_square_feet'] = df['gross_square_feet'].replace('0' , 0)
         df['gross_square_feet']= pd.to_numeric(df['gross_square_feet'], errors = 'raise')
         df['gross_square_feet'] = df['gross_square_feet'].replace(0,round(scipy.stats.trim_mean(df['gross_square_feet'], 0.08), 0))
-        # reset index 
-        df = df.reset_index(drop = True) 
+        # reset index
+        df = df.reset_index(drop = True)
+        
         return df
     
-    def airbnb_cleaner(self, df):
+    def airbnb_cleaner(self, df, neighs):
         self.df = df
+        self.neighs = neighs
         
         del df["last_review"]
         del df["reviews_per_month"]
@@ -81,12 +83,15 @@ class cleaners:
         
         shape_after = df.shape
         
+        df["neighborhood"] = df.apply( lambda row: self.closest(neighs, [row['latitude'], row['longitude']])[0], axis = 1)
         print(shape_after == df.shape)
+        
         return df
     
-    def crash_cleaner(self, df):
+    def crash_cleaner(self, df, neighs):
         
         self.df = df
+        self.neighs = neighs
         df = df.rename(columns = str.lower)
         df.columns = df.columns.str.replace(' ', '_')
         
@@ -117,6 +122,10 @@ class cleaners:
         df['number_of_persons_injured'] = pd.to_numeric(df['number_of_persons_injured'], errors = 'raise')
         df['number_of_persons_killed'] = pd.to_numeric(df['number_of_persons_killed'], errors = 'raise')
         
+        
+        # add the column "neighborhood" to df_crash
+        df['neighborhood'] = df.apply( lambda row: self.closest(neighs, [row['latitude'], row['longitude']])[0], axis = 1)
+        
         return df
     # --------------------------------------------------
     # Functions used to fill values in the column "borough" starting from coordinates
@@ -138,3 +147,61 @@ class cleaners:
     
     
     # --------------------------------------------------
+    def string_affinity(self, s, t, ratio_calc = True):
+        """ Levenshtein_ratio_and_distance:
+            Calculates levenshtein distance between two strings.
+            If ratio_calc = True, the function computes the
+            levenshtein distance ratio of similarity between two strings
+            For all i and j, distance[i,j] will contain the Levenshtein
+            distance between the first i characters of s and the
+            first j characters of t
+        """
+        self.s = s
+        self.t = t
+        self.ratio_calc = ratio_calc
+        # Initialize matrix of zeros
+        rows = len(s)+1
+        cols = len(t)+1
+        distance = np.zeros((rows,cols),dtype = int)
+
+        # Populate matrix of zeros with the indeces of each character of both strings
+        for i in range(1, rows):
+            for k in range(1,cols):
+                distance[i][0] = i
+                distance[0][k] = k
+
+        # Iterate over the matrix to compute the cost of deletions,insertions and/or substitutions    
+        for col in range(1, cols):
+            for row in range(1, rows):
+                if s[row-1] == t[col-1]:
+                    cost = 0 # If the characters are the same in the two strings in a given position [i,j] then the cost is 0
+                else:
+                    # In order to align the results with those of the Python Levenshtein package, if we choose to calculate the ratio
+                    # the cost of a substitution is 2. If we calculate just distance, then the cost of a substitution is 1.
+                    if ratio_calc == True:
+                        cost = 2
+                    else:
+                        cost = 1
+                distance[row][col] = min(distance[row-1][col] + 1,      # Cost of deletions
+                                     distance[row][col-1] + 1,          # Cost of insertions
+                                     distance[row-1][col-1] + cost)     # Cost of substitutions
+        if ratio_calc == True:
+            # Computation of the Levenshtein Distance Ratio
+            Ratio = ((len(s)+len(t)) - distance[row][col]) / (len(s)+len(t))
+            return Ratio
+            """
+            if Ratio >= 0.7: # added a barrier of affinity of 0.7 up to 1
+                return Ratio
+            else:
+                return "Not found"
+            """
+        else:
+            # print(distance) # Uncomment if you want to see the matrix showing how the algorithm computes the cost of deletions,
+            # insertions and/or substitutions
+            # This is the minimum number of edits needed to convert string a to string b
+            return "The strings are {} edits away".format(distance[row][col])
+        
+        
+#class pivots:
+    
+ #   def 
