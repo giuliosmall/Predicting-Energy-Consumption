@@ -25,7 +25,6 @@ class Test:
         
         regression = Lasso(alpha = 0.99, fit_intercept = True)
         model = regression.fit(X_tr, y_tr)
-        y_pred = model.predict(X_std)
         
         coeffs = dict(zip(df.drop("appliance_wh", axis = 1).columns, list(model.coef_)))
         coeffs = pd.DataFrame( sorted(coeffs.items(), key = operator.itemgetter(1))[::-1] ) # sort by value
