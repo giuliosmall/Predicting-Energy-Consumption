@@ -58,3 +58,30 @@ class Graphs:
 
         plt.tight_layout(pad=2)
         plt.savefig("Relations.jpg", pdi = 300)
+        
+        
+    def plot_2(self, df, m1, m2, m3):
+        self.df = df
+        
+        size = int(len(df)*0.75)
+        fig, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(nrows = 3, ncols = 2, figsize = (35, 15))
+        space = np.linspace(0, 100)
+        
+        ax1.plot(space, m1.coef_[0][4]*space + m1.intercept_); ax1.set_title('Laundry °C')
+        ax1.scatter(df.laundry_celsius[size:], df.appliance_wh[size:])
+
+        ax2.plot(space, m1.coef_[0][1]*space + m1.intercept_); ax2.set_title('Kitchen Humidity %')
+        ax2.scatter(df.kitchen_hum_perc[size:], df.appliance_wh[size:])
+
+        ax3.plot(space, m2.coef_[0][3]*space + m2.intercept_); ax3.set_title('Laundry °C LASSO')
+        ax3.scatter(df.laundry_celsius[size:], df.appliance_wh[size:])
+
+        ax4.plot(space, m2.coef_[0][1]*space + m2.intercept_); ax4.set_title('Kitchen Humidity % LASSO')
+        ax4.scatter(df.kitchen_hum_perc[size:], df.appliance_wh[size:])
+
+        ax5.plot(space, m3.coef_[0][4]*space + m3.intercept_); ax5.set_title('Laundry °C RFECV')
+        ax5.scatter(df.laundry_celsius[size:], df.appliance_wh[size:])
+
+        ax6.plot(space, m3.coef_[0][1]*space + m3.intercept_); ax6.set_title('Kitchen Humidity % RFECV')
+        ax6.scatter(df.kitchen_hum_perc[size:], df.appliance_wh[size:])
+        plt.savefig("linear_model.jpg", dpi = 300)
